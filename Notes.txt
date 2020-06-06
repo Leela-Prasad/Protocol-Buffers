@@ -1,0 +1,142 @@
+Protocol Buffer (Proto Buffer) is another data format for exchanging messages.
+
+Advantages:
+1. Data is fully typed.
+2. Data is compressed automatically (so less CPU Usage when reading Proto Buffer Messages).
+3. Schema defined using .proto file is needed to generate code and read data from the message.
+4. Documentation can be embedded in the schema using comments.
+5. Data can be read across any language i.e., cross platform (java, go, javascript, .NET, python etc)
+6. Schema can evolve over time in a safe manner.
+7. 3-10X smaller and 20-100X faster than XML
+8. Automatic code generation via schema file i.e., .proto file.
+
+Disadvantages:
+1. Cannot open seralized data within a text editor (because it is compressed and seralized).
+
+Lot of RPC Frameworks eg: gRPC by Google use Protocol Buffer to exchange Data for all there internal API
+etcd use Protocol Buffer for transporting data.
+Some Databases have support for Protocol Buffer data format.
+
+Schema data types.
+int32 - integer
+float - for 32 bits
+double - for 64 bits
+bool - for boolean 
+string - should be in UTF-8 encoded
+bytes 
+
+In Protocol Buffer Field Names are not important (but when programming fields are important)
+
+For Protocol Buffer important element is  tag.
+
+smallest tag is 1
+largest tag is 2^29 - 1 or 536,870,911
+*** You cannot use numbers from 19000 through 19999 which are reserved tags by google.
+
+Tag numbers from 1 to 15 use 1 byte in space 
+Tag numbers from 16 to 2047 use 2 bytes
+There is a concept of reserved tag also.
+
+Repeated Fields:
+To make a list or array we can use concept of repeated fields.
+list can take any number of elements (i.e., 0 or more)
+for this one we will use "repeated" keyword
+
+
+Comments:
+we can use comments in .proto file
+comments can be used to document schema elements.
+
+// single line comment
+
+/* this is 
+ * Multi line comment */
+ 
+ 
+ Default Values for fields:
+ bool - false
+ number - 0
+ string - empty string
+ bytes - empty bytes
+ enum - first value
+ repeated - empty list
+ 
+ Enums:
+ If we know all the values that a field can take in advance then we can use Enum.
+ ***First value of Enum is taken as default.
+ ** Enum must start by a tag 0
+
+ options that we can define to generate class file in a custom way
+
+option java_package = "com.examples.simple";
+option java_outer_classname = "PonyCopter";
+
+
+Evolving Protocol Buffers:
+Because of business requirements some of the fields in the proto buf file change or added or removed.
+
+Protocol Buffers is Fully Compatible i.e,
+It is forward compatible (write data with new proto and read data with old proto)
+Is is backward compatible (write data with old proto and read data with new proto)
+
+
+Rules for Updating Protocol Buffers:
+1. Don't change numeric tag for any existing field 
+because it will be used for serilization and that data will be mapped to wrong field in the generated code.
+2. You can add new fields and old code (i.e., generated code) will just ignore them.
+3. If you remove the field then that field will be unknown and default value will be assigned automatically.
+4. Fields can be removed only as long as tag number is NOT used again in your updated message type
+ To prevent we can rename the field (eg: adding a prefix OBSOLETE_) or make the tag reserved. so that future users of your .proto cannot accidently reuse the number.
+
+
+Adding Fields:
+Add a new field
+If that new field is sent to the old code then old code will not know what that tag number corresponds to and the field will be ignored.
+If we read old data(which will not have this new field) with new code then new field will not be found and default value will be assumed.
+Default Values should always be interpreted with care.
+
+eg: suppose if the account balance is zero then we dont know whether that field is missing or it is the real balance of the customer.
+Default values should not have any business value.
+
+Removing Fields:
+Remove a field in the schema
+If the old code doesn't find the removed field then default will be assumed.
+If the old data (which will have removed field) with new code then that removed field will be ignored.
+
+Removing Fields with reserved tags:
+when removing a field you should always reserve the tag and field name
+This prevents conflicts in the code base
+This prevents tag and field name to be reused.
+
+eg:
+
+message myMessage {
+	int32 id = 1;
+	string first_name = 2;
+}
+
+Removing first_name field
+
+message myMessage {
+	reserved 2;
+	reserved "first_name";
+	int32 id = 1;
+}
+
+Reserving mutliple tags and field names
+
+message Foo {
+	reserved 2, 15, 9 to 11;
+	reserved "foo", "bar";
+}
+
+
+Beware of Defaults:
+Default allow us to easily evolve proto buffer files without breaking any existing or new codes.
+Default ensures that the fields will always have a non null values.
+
+But you cannot differentiate from a missing value or if a value equal to default was set.
+eg: suppose if the account balance is zero then we dont know whether that field is missing or it is the real balance of the customer.
+
+Default values should not have any business value.
+Handle default values in the code with if statements

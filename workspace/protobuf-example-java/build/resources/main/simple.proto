@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package examples.simple;
+
+option java_package = "com.examples.simple";
+//option java_outer_classname = "PonyCopter";
+
+message SimpleMessage {
+  int32 id = 1;
+  bool is_simple = 2;
+  string name = 3;
+  repeated int32 sample_list = 4;
+}
